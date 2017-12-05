@@ -21,9 +21,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="main.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="FW1FontWrapper\CFW1ColorRGBA.h">
       <Filter>Resource Files\FW1FontWrapper</Filter>
     </ClInclude>
@@ -92,6 +89,15 @@
     </ClInclude>
     <ClInclude Include="MinHook\src\hde\table64.h">
       <Filter>Resource Files\MinHook</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelChecker.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -187,6 +193,15 @@
     </ClCompile>
     <ClCompile Include="MinHook\src\hde\hde64.c">
       <Filter>Resource Files\MinHook</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelChecker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Model.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
