@@ -321,11 +321,28 @@ void __stdcall hookD3D11DrawIndexed(ID3D11DeviceContext* pContext, UINT IndexCou
 
 	if (modelChecker->findModel(Stride, IndexCount, indesc.ByteWidth, vedesc.ByteWidth, Descr.Format)) 
 	{
+		ID3D11RasterizerState * _rwState;
+		D3D11_RASTERIZER_DESC rwDesc;
+		pContext->RSGetState(&rwState); // retrieve the current state
+	
+		rwDesc.AntialiasedLineEnable = true;
+		rwDesc.CullMode = D3D11_CULL_NONE;
+		rwDesc.DepthBias = 0;
+		rwDesc.DepthBiasClamp = 0.0f;
+		rwDesc.DepthClipEnable = true;
+		rwDesc.FillMode = D3D11_FILL_SOLID;
+		rwDesc.FrontCounterClockwise = false;
+		rwDesc.MultisampleEnable = false;
+		rwDesc.ScissorEnable = false;
+		rwDesc.SlopeScaledDepthBias = 0.0f;
+		pDevice->CreateRasterizerState(&rwDesc, &_rwState);
+		pContext->RSSetState(_rwState);
+
 		SetDepthStencilState(DISABLED);
 		pContext->PSSetShader(psPink, NULL, NULL);
 		SetDepthStencilState(READ_NO_WRITE);
 	}
-
+	
 	//ALT + CTRL + L toggles logger
 	if (logger)
 	{
@@ -609,6 +626,7 @@ BOOL __stdcall DllMain(HINSTANCE hModule, DWORD dwReason, LPVOID lpReserved)
 	case DLL_PROCESS_ATTACH: // A process is loading the DLL.
 		Beep(100, 100);
 		DisableThreadLibraryCalls(hModule);
+		//std::thread(&InitializeHook, hModule);
 		utils = new Utils(hModule);
 		CreateThread(NULL, 0, InitializeHook, NULL, 0, NULL);
 		break;
