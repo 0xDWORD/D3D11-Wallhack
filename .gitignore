@@ -31,5 +31,12 @@
 *.out
 *.app
 
+#msvs
+*.sdf
+*.suo
+*.vcxproj.user
+
 #folders
 .vs/
+release/
+debug/
