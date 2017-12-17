@@ -8,7 +8,7 @@ DWORD __stdcall initDX(LPVOID) {
 	dxHook->InitDX11();
 	if (MH_Initialize() != MH_OK) { return 1; }
 
-	if (MH_CreateHook((DWORD_PTR*)dxHook->pSwapChainVtable[8], (LPVOID) dxHook->hookD3D11Present, reinterpret_cast<void**>(&dxHook->phookD3D11Present)) != MH_OK) { return 1; }
+	if (MH_CreateHook((DWORD_PTR*)dxHook->pSwapChainVtable[8], dxHook->hookD3D11Present, reinterpret_cast<void**>(&dxHook->phookD3D11Present)) != MH_OK) { return 1; }
 	if (MH_EnableHook((DWORD_PTR*)dxHook->pSwapChainVtable[8]) != MH_OK) { return 1; }
 	if (MH_CreateHook((DWORD_PTR*)dxHook->pContextVTable[12], dxHook->hookD3D11DrawIndexed, reinterpret_cast<void**>(&dxHook->phookD3D11DrawIndexed)) != MH_OK) { return 1; }
 	if (MH_EnableHook((DWORD_PTR*)dxHook->pContextVTable[12]) != MH_OK) { return 1; }
