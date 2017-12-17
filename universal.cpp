@@ -95,6 +95,8 @@ Utils *utils;
 bool logger = false;
 int countnum = 0;
 int strideNum = 0;
+int matchLevel = 0;
+int depthNum = 0;
 char szString[64];
 
 //==========================================================================================================================
@@ -250,7 +252,6 @@ HRESULT __stdcall hookD3D11Present(IDXGISwapChain* pSwapChain, UINT SyncInterval
 		pFW1Factory->Release();
 
 		// use the back buffer address to create the render target
-		//if (SUCCEEDED(pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<LPVOID*>(&RenderTargetTexture))))
 		if (SUCCEEDED(pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&RenderTargetTexture)))
 		{
 			pDevice->CreateRenderTargetView(RenderTargetTexture, NULL, &RenderTargetView);
@@ -261,44 +262,72 @@ HRESULT __stdcall hookD3D11Present(IDXGISwapChain* pSwapChain, UINT SyncInterval
 
 	//shaders
 	if (!psRed)
-	GenerateShader(pDevice, &psRed, 1.0f, 0.0f, 0.0f);
+		GenerateShader(pDevice, &psRed, 1.0f, 0.0f, 0.0f);
 
 	if (!psGreen)
-	GenerateShader(pDevice, &psGreen, 0.0f, 1.0f, 0.0f);
+		GenerateShader(pDevice, &psGreen, 0.0f, 1.0f, 0.0f);
 
 	if (!psPink)
 		GenerateShader(pDevice, &psPink, 255.0f, 20.0f, 147.0f);
 
-
-	//call before you draw
+	//bind the render target view to the output merger stage of the pipeline
 	pContext->OMSetRenderTargets(1, &RenderTargetView, NULL);
-
-	//draw
-	if (pFontWrapper)
-		pFontWrapper->DrawString(pContext, L"D3D11 Hook", 14, 16.0f, 16.0f, 0xffff1612, FW1_RESTORESTATE);
-
 
 	//logger
 	if ((GetAsyncKeyState(VK_MENU)) && (GetAsyncKeyState(VK_CONTROL)) && (GetAsyncKeyState(0x4C) & 1)) //ALT + CTRL + L toggles logger
 		logger = !logger;
-	if (logger && pFontWrapper) //&& countnum >= 0)
-	{
-		//call before you draw
-		pContext->OMSetRenderTargets(1, &RenderTargetView, NULL);
-
-		wchar_t reportValue[256];
-		swprintf_s(reportValue, L"countnum = %d", countnum);
-		pFontWrapper->DrawString(pContext, reportValue, 20.0f, 220.0f, 100.0f, 0xffffffff, FW1_RESTORESTATE);
-		pFontWrapper->DrawString(pContext, L"hold P to +", 20.0f, 220.0f, 120.0f, 0xfff11111, FW1_RESTORESTATE);
-		pFontWrapper->DrawString(pContext, L"hold O to -", 20.0f, 220.0f, 140.0f, 0xfaf22222, FW1_RESTORESTATE);
-		pFontWrapper->DrawString(pContext, L"press I to log", 20.0f, 220.0f, 160.0f, 0xfff99999, FW1_RESTORESTATE);
-		pFontWrapper->DrawString(pContext, L"F9 to log drawfunc", 20.0f, 220.0f, 180.0f, 0xff00ff00, FW1_RESTORESTATE);
-	}
 
 	return phookD3D11Present(pSwapChain, SyncInterval, Flags);
 }
 
 //==========================================================================================================================
+
+bool SetDepthEnable(bool depthenable, bool stencilenable)
+{
+	ID3D11DepthStencilState *depthstencilstatea;
+	UINT ref;
+	D3D11_DEPTH_STENCIL_DESC desc;
+
+	pContext->OMGetDepthStencilState(&depthstencilstatea, &ref);
+	depthstencilstatea->GetDesc(&desc);
+
+	desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	desc.DepthEnable = depthenable;
+
+	desc.StencilEnable = stencilenable;
+
+	HRESULT result = pDevice->CreateDepthStencilState(&desc, &depthstencilstatea);
+	if (FAILED(result))
+	{
+		return false;
+	}
+	pContext->OMSetDepthStencilState(depthstencilstatea, 0);
+	return true;
+}
+
+//SetDepthFunc wallhack
+bool SetDepthFunc(D3D11_COMPARISON_FUNC depthfunc, bool stencilenable)
+{
+	ID3D11DepthStencilState *depthstencilstateb;
+	UINT ref;
+	D3D11_DEPTH_STENCIL_DESC desc;
+
+	pContext->OMGetDepthStencilState(&depthstencilstateb, &ref);
+	depthstencilstateb->GetDesc(&desc);
+
+	desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	desc.DepthFunc = depthfunc;
+
+	desc.StencilEnable = stencilenable;
+
+	HRESULT result = pDevice->CreateDepthStencilState(&desc, &depthstencilstateb);
+	if (FAILED(result))
+	{
+		return false;
+	}
+	pContext->OMSetDepthStencilState(depthstencilstateb, 0);
+	return true;
+}
 
 void __stdcall hookD3D11DrawIndexed(ID3D11DeviceContext* pContext, UINT IndexCount, UINT StartIndexLocation, INT BaseVertexLocation)
 {	
@@ -307,6 +336,7 @@ void __stdcall hookD3D11DrawIndexed(ID3D11DeviceContext* pContext, UINT IndexCou
 
 	if (veBuffer) {
 		veBuffer->GetDesc(&vedesc);
+
 	}
 
 	//get indesc.ByteWidth
@@ -316,45 +346,85 @@ void __stdcall hookD3D11DrawIndexed(ID3D11DeviceContext* pContext, UINT IndexCou
 		inBuffer->GetDesc(&indesc);
 	}
 
+	if (pFontWrapper)
+	{
+		wchar_t reportValue[256];
+		swprintf_s(reportValue, L"countnum = %d, matchLevel = %d depthNum = %d", countnum, matchLevel, depthNum);
 
+		pFontWrapper->DrawString(pContext, reportValue, 20.0f, 220.0f, 100.0f, 0xffffffff, FW1_RESTORESTATE);
+	}
+	
 	//wallhack example
 
-	if (modelChecker->findModel(Stride, IndexCount, indesc.ByteWidth, vedesc.ByteWidth, Descr.Format)) 
+	if (modelChecker->findModel(matchLevel, Stride, IndexCount, indesc.ByteWidth, vedesc.ByteWidth, Descr.Format))
 	{
-		SetDepthStencilState(DISABLED);
-		pContext->PSSetShader(psPink, NULL, NULL);
-		SetDepthStencilState(READ_NO_WRITE);
+		ID3D11RasterizerState * _rwState;
+		D3D11_RASTERIZER_DESC rwDesc;
+		pContext->RSGetState(&rwState); // retrieve the current state
+	
+		rwDesc.AntialiasedLineEnable = true;
+		rwDesc.CullMode = D3D11_CULL_NONE;
+		rwDesc.DepthBias = depthNum;
+		rwDesc.DepthBiasClamp = 0.0f;
+		rwDesc.DepthClipEnable = false;
+		rwDesc.FillMode = D3D11_FILL_SOLID;
+		rwDesc.FrontCounterClockwise = false;
+		rwDesc.MultisampleEnable = false;
+		rwDesc.ScissorEnable = false;
+		rwDesc.SlopeScaledDepthBias = 0.0f;
+		pDevice->CreateRasterizerState(&rwDesc, &_rwState);
+		pContext->RSSetState(_rwState);
+
+		SetDepthEnable(false, false); //wallhack on behind walls
+		pContext->PSSetShader(psPink, NULL, NULL); //behind walls
+		phookD3D11DrawIndexed(pContext, IndexCount, StartIndexLocation, BaseVertexLocation);
+		SetDepthEnable(true, false); //wallhack off
+		pContext->PSSetShader(psRed, NULL, NULL); //green
+
+		//SetDepthStencilState(DISABLED);
+		//pContext->PSSetShader(psPink, NULL, NULL);
+		//SetDepthStencilState(READ_NO_WRITE);
 	}
 
+	if (GetAsyncKeyState(VK_NUMPAD8) & 1)
+		depthNum++;
+
+	if (GetAsyncKeyState(VK_NUMPAD5) & 1)
+		depthNum--;
+
+	if (GetAsyncKeyState(VK_UP) & 1)
+		strideNum++;
+
+	if (GetAsyncKeyState(VK_DOWN) & 1)
+		strideNum--;
+
+	if (GetAsyncKeyState(VK_RIGHT) & 1)
+		matchLevel++;
+
+	if (GetAsyncKeyState(VK_LEFT) & 1) {
+		strideNum = 0;
+		countnum = 0;
+		matchLevel = 0;
+	}
+
+	//hold down P key until a texture is wallhacked, press I to log values of those textures
+	if (GetAsyncKeyState('O') & 1) //-
+		countnum--;
+	if (GetAsyncKeyState('P') & 1) //+
+		countnum++;
+	if ((GetAsyncKeyState(VK_MENU)) && (GetAsyncKeyState('9') & 1)) //reset, set to -1
+		countnum = -1;
+	if (countnum == indesc.ByteWidth / 1000)
+		if (GetAsyncKeyState('I') & 1)
+			utils->Log("Model(%d, %d, %d, %d, %d)", Stride, IndexCount, indesc.ByteWidth, vedesc.ByteWidth, Descr.Format);
+
+	if (Stride == strideNum)
+		if (GetAsyncKeyState('I') & 1)
+			utils->Log("Stride == %d", Stride);
+	
 	//ALT + CTRL + L toggles logger
 	if (logger)
 	{
-
-		if (GetAsyncKeyState(VK_UP) & 1)
-			strideNum++;
-
-		if (GetAsyncKeyState(VK_DOWN) & 1)
-			strideNum--;
-
-		if (GetAsyncKeyState(VK_LEFT) & 1) {
-			strideNum = 0;
-			countnum = 0;
-		}
-
-		//hold down P key until a texture is wallhacked, press I to log values of those textures
-		if (GetAsyncKeyState('O') & 1) //-
-			countnum--;
-		if (GetAsyncKeyState('P') & 1) //+
-			countnum++;
-		if ((GetAsyncKeyState(VK_MENU)) && (GetAsyncKeyState('9') & 1)) //reset, set to -1
-			countnum = -1;
-		if (countnum == indesc.ByteWidth / 1000)
-			if (GetAsyncKeyState('I') & 1)
-				utils->Log("Model(%d, %d, %d, %d, %d)", Stride, IndexCount, indesc.ByteWidth, vedesc.ByteWidth, Descr.Format);
-
-		if (Stride == strideNum)
-			if (GetAsyncKeyState('I') & 1)
-				utils->Log("Stride == %d", Stride);
 
 		if (strideNum == Stride) {
 			pContext->PSSetShader(psRed, NULL, NULL);
@@ -417,15 +487,15 @@ void __stdcall hookD3D11CreateQuery(ID3D11Device* pDevice, const D3D11_QUERY_DES
 
 void __stdcall hookCreateVertexShader(ID3D10Device* pDevice, const void *pShaderBytecode, SIZE_T BytecodeLength, ID3D10VertexShader **ppVertexShader)
 {
-	if (GetAsyncKeyState(VK_RIGHT) & 1) {
-		Beep(200, 200);
-		ID3D10Blob *pIDisassembly;
-		D3DDisassemble(pShaderBytecode, BytecodeLength, 0, 0, &pIDisassembly);
 
-		if (pIDisassembly)
-		{
-			utils->Log("%s", pIDisassembly->GetBufferPointer());
-		}
+	Beep(200, 200);
+
+	ID3D10Blob *pIDisassembly;
+	D3DDisassemble(pShaderBytecode, BytecodeLength, 0, 0, &pIDisassembly);
+
+	if (pIDisassembly)
+	{
+		utils->Log("Vertex buffer hooked %s", pIDisassembly);
 	}
 	
 	return phookCreateVertexShader(pDevice, pShaderBytecode, BytecodeLength, ppVertexShader);
@@ -609,6 +679,7 @@ BOOL __stdcall DllMain(HINSTANCE hModule, DWORD dwReason, LPVOID lpReserved)
 	case DLL_PROCESS_ATTACH: // A process is loading the DLL.
 		Beep(100, 100);
 		DisableThreadLibraryCalls(hModule);
+		//std::thread(&InitializeHook, hModule);
 		utils = new Utils(hModule);
 		CreateThread(NULL, 0, InitializeHook, NULL, 0, NULL);
 		break;

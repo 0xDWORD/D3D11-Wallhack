@@ -11,7 +11,6 @@ Utils::~Utils()
 
 void Utils::Log(const char *fmt, ...)
 {
-	Beep(200, 200);
 	LogF("log.txt", fmt);
 }
 

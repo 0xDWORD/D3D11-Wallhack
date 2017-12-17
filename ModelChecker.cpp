@@ -6,14 +6,15 @@ ModelChecker::ModelChecker()
 }
 
 
-bool ModelChecker::findModel(int strideCount, int indexCount, int vertexWidth, int indexWidth, int shaderTextureFormat)
+bool ModelChecker::findModel(int matchLevel, int strideCount, int indexCount, int vertexWidth, int indexWidth, int shaderTextureFormat)
 {
 	if (models.size() == 0)
 		return false;
 
 	for (auto &model : models) 
 	{
-		if (model.isMatch(strideCount, indexCount, vertexWidth, indexWidth, shaderTextureFormat))
+
+		if (model.isMatch(matchLevel, strideCount, indexCount, vertexWidth, indexWidth, shaderTextureFormat))
 		{
 			return true;
 		}
@@ -35,4 +36,13 @@ void ModelChecker::createModels()
 	models.push_back(Model(0, 129384, 345940, 77, -716099584));
 	models.push_back(Model(0, 129384, 345940, 10, 64692));
 	models.push_back(Model(0, 129384, 345940, 10, 0));
+
+	//jnq
+	models.push_back(Model(0, 14892, 42140, 61, 2048));
+	//siga
+	models.push_back(Model(0, 83334, 515956, 61, 2048));
+	//kits
+	models.push_back(Model(0, 129384, 345856, 61, 2048));
+	models.push_back(Model(64692, 129384, 345940, 61, 2048));
+	models.push_back(Model(64692, 129384, 345856, 72, 2048));
 }

@@ -12,7 +12,7 @@ public:
 	ModelChecker();
 	~ModelChecker();
 
-	bool findModel(int strideCount, int indexCount, int vertexWidth, int indexWidth, int shaderTextureFormat);
+	bool findModel(int matchLevel, int strideCount, int indexCount, int vertexWidth, int indexWidth, int shaderTextureFormat);
 	void createModels();
 
 };
