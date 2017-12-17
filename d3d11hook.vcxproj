@@ -149,6 +149,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="DXHooks.h" />
     <ClInclude Include="FW1FontWrapper\CFW1ColorRGBA.h" />
     <ClInclude Include="FW1FontWrapper\CFW1DWriteRenderTarget.h" />
     <ClInclude Include="FW1FontWrapper\CFW1Factory.h" />
@@ -177,6 +178,7 @@
     <ClInclude Include="Utils.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DXHooks.cpp" />
     <ClCompile Include="FW1FontWrapper\CFW1ColorRGBA.cpp" />
     <ClCompile Include="FW1FontWrapper\CFW1ColorRGBAInterface.cpp" />
     <ClCompile Include="FW1FontWrapper\CFW1DWriteRenderTarget.cpp" />
